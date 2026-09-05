@@ -1,0 +1,1485 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Arena Control</title>
+  <meta name="theme-color" content="#6d4c41" />
+
+  <style>
+    :root{
+      --bg-1:#fff8ef;
+      --bg-2:#f6efe7;
+      --card:#ffffff;
+      --text:#2d241f;
+      --muted:#7b6b62;
+      --primary:#6d4c41;
+      --primary-dark:#4e342e;
+      --accent:#f4a261;
+      --accent-2:#2a9d8f;
+      --danger:#d62828;
+      --warning:#fcbf49;
+      --line:#eaded5;
+      --shadow:0 18px 45px rgba(80,54,40,.14);
+      --shadow-soft:0 10px 25px rgba(80,54,40,.08);
+      --radius:22px;
+    }
+
+    *{box-sizing:border-box}
+
+    body{
+      margin:0;
+      min-height:100vh;
+      font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(244,162,97,.28), transparent 32rem),
+        radial-gradient(circle at top right, rgba(42,157,143,.20), transparent 30rem),
+        linear-gradient(135deg,var(--bg-1),var(--bg-2));
+    }
+
+    body::before{
+      content:"";
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      background-image:
+        radial-gradient(rgba(109,76,65,.08) 1px, transparent 1px);
+      background-size:28px 28px;
+      mask-image:linear-gradient(to bottom, rgba(0,0,0,.7), transparent 70%);
+    }
+
+    .app{
+      width:min(1120px,100%);
+      margin:0 auto;
+      padding:18px 14px 32px;
+    }
+
+    .hero{
+      position:relative;
+      overflow:hidden;
+      background:linear-gradient(135deg,var(--primary-dark),var(--primary));
+      color:#fff;
+      border-radius:32px;
+      padding:24px 20px;
+      box-shadow:var(--shadow);
+      animation:slideDown .55s ease both;
+    }
+
+    .hero::after{
+      content:"🐾";
+      position:absolute;
+      right:18px;
+      top:5px;
+      font-size:8.5rem;
+      opacity:.12;
+      transform:rotate(-18deg);
+      animation:floatPaw 4.2s ease-in-out infinite;
+    }
+
+    .hero-top{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:16px;
+      position:relative;
+      z-index:1;
+    }
+
+    .brand{
+      display:flex;
+      gap:14px;
+      align-items:center;
+    }
+
+    .logo{
+      width:58px;
+      height:58px;
+      display:grid;
+      place-items:center;
+      border-radius:20px;
+      background:rgba(255,255,255,.16);
+      border:1px solid rgba(255,255,255,.22);
+      box-shadow:inset 0 0 20px rgba(255,255,255,.10);
+      font-size:2rem;
+      animation:pulseLogo 2.6s ease-in-out infinite;
+    }
+
+    h1{
+      margin:0;
+      font-size:clamp(1.5rem,4vw,2.2rem);
+      letter-spacing:-.03em;
+    }
+
+    .subtitle{
+      margin:5px 0 0;
+      color:rgba(255,255,255,.82);
+      font-size:.98rem;
+    }
+
+    .hero-actions{
+      display:flex;
+      gap:9px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+
+    button,a.button{
+      border:0;
+      border-radius:16px;
+      padding:12px 14px;
+      font:inherit;
+      font-weight:800;
+      cursor:pointer;
+      text-decoration:none;
+      transition:transform .16s ease, box-shadow .16s ease, background .16s ease, opacity .16s ease;
+    }
+
+    button:active,a.button:active{transform:scale(.97)}
+
+    .btn-primary{
+      background:linear-gradient(135deg,var(--accent),#ffbf7b);
+      color:#3b261d;
+      box-shadow:0 10px 22px rgba(244,162,97,.30);
+    }
+
+    .btn-primary:hover{transform:translateY(-2px);box-shadow:0 14px 26px rgba(244,162,97,.38)}
+
+    .btn-secondary{
+      background:#fff;
+      color:var(--primary-dark);
+      border:1px solid var(--line);
+    }
+
+    .btn-secondary:hover{transform:translateY(-2px);box-shadow:var(--shadow-soft)}
+
+    .btn-ghost{
+      background:rgba(255,255,255,.14);
+      color:#fff;
+      border:1px solid rgba(255,255,255,.25);
+      backdrop-filter:blur(8px);
+    }
+
+    .btn-danger{
+      background:var(--danger);
+      color:#fff;
+    }
+
+    .tabs{
+      display:flex;
+      gap:9px;
+      margin:16px 0;
+      overflow-x:auto;
+      padding:4px 2px 8px;
+      scrollbar-width:none;
+    }
+
+    .tabs::-webkit-scrollbar{display:none}
+
+    .tab{
+      white-space:nowrap;
+      color:var(--muted);
+      background:rgba(255,255,255,.72);
+      border:1px solid rgba(234,222,213,.9);
+      box-shadow:0 8px 18px rgba(80,54,40,.05);
+      position:relative;
+      overflow:hidden;
+    }
+
+    .tab::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      background:linear-gradient(135deg,rgba(244,162,97,.22),rgba(42,157,143,.12));
+      opacity:0;
+      transition:opacity .22s ease;
+    }
+
+    .tab span{
+      position:relative;
+      z-index:1;
+    }
+
+    .tab.active{
+      background:#fff;
+      color:var(--primary-dark);
+      transform:translateY(-2px);
+      box-shadow:0 12px 24px rgba(80,54,40,.10);
+    }
+
+    .tab.active::before{opacity:1}
+
+    .view{
+      display:none;
+      animation:fadeUp .32s ease both;
+    }
+
+    .view.active{display:block}
+
+    .grid{
+      display:grid;
+      gap:14px;
+    }
+
+    .metrics{
+      grid-template-columns:repeat(4,minmax(0,1fr));
+    }
+
+    .metric{
+      background:rgba(255,255,255,.82);
+      border:1px solid rgba(234,222,213,.85);
+      border-radius:var(--radius);
+      padding:18px;
+      box-shadow:var(--shadow-soft);
+      backdrop-filter:blur(10px);
+      animation:popIn .4s ease both;
+    }
+
+    .metric:nth-child(2){animation-delay:.05s}
+    .metric:nth-child(3){animation-delay:.1s}
+    .metric:nth-child(4){animation-delay:.15s}
+
+    .metric small{
+      display:block;
+      color:var(--muted);
+      font-weight:750;
+      margin-bottom:9px;
+    }
+
+    .metric strong{
+      font-size:clamp(1.35rem,4vw,1.95rem);
+      letter-spacing:-.04em;
+    }
+
+    .metric .spark{
+      margin-top:12px;
+      height:8px;
+      border-radius:999px;
+      background:linear-gradient(90deg,var(--accent),var(--accent-2));
+      transform-origin:left;
+      animation:growBar .8s ease both;
+    }
+
+    .two-col{
+      grid-template-columns:1.15fr .85fr;
+      margin-top:14px;
+    }
+
+    .card{
+      background:rgba(255,255,255,.86);
+      border:1px solid rgba(234,222,213,.88);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow-soft);
+      padding:18px;
+      backdrop-filter:blur(10px);
+    }
+
+    .card-title{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      margin-bottom:12px;
+    }
+
+    .card h2,.card h3{
+      margin:0;
+      letter-spacing:-.02em;
+    }
+
+    .hint{
+      color:var(--muted);
+      margin:4px 0 14px;
+      line-height:1.45;
+      font-size:.94rem;
+    }
+
+    .form{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:12px;
+    }
+
+    label{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      font-size:.9rem;
+      color:#4e4038;
+      font-weight:800;
+    }
+
+    input,select,textarea{
+      width:100%;
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:13px 13px;
+      font:inherit;
+      color:var(--text);
+      background:#fff;
+      outline:none;
+      transition:border .16s ease, box-shadow .16s ease, transform .16s ease;
+    }
+
+    input:focus,select:focus,textarea:focus{
+      border-color:var(--accent);
+      box-shadow:0 0 0 4px rgba(244,162,97,.18);
+      transform:translateY(-1px);
+    }
+
+    textarea{resize:vertical}
+
+    .full{grid-column:1/-1}
+
+    .actions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:14px;
+    }
+
+    .list{
+      display:grid;
+      gap:10px;
+    }
+
+    .item{
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:20px;
+      padding:14px;
+      box-shadow:0 8px 20px rgba(80,54,40,.06);
+      animation:itemEnter .28s ease both;
+      transition:transform .16s ease, box-shadow .16s ease;
+    }
+
+    .item:hover{
+      transform:translateY(-2px);
+      box-shadow:0 14px 28px rgba(80,54,40,.10);
+    }
+
+    .item-top{
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      align-items:flex-start;
+    }
+
+    .item-title{
+      margin:0;
+      font-size:1.02rem;
+      font-weight:900;
+    }
+
+    .item-meta{
+      color:var(--muted);
+      margin:4px 0 0;
+      line-height:1.35;
+      font-size:.92rem;
+    }
+
+    .badges{
+      display:flex;
+      gap:7px;
+      flex-wrap:wrap;
+      margin-top:10px;
+    }
+
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      gap:5px;
+      padding:6px 9px;
+      border-radius:999px;
+      background:#f7efe7;
+      color:var(--primary-dark);
+      font-size:.78rem;
+      font-weight:900;
+    }
+
+    .badge.green{
+      background:#e6f7f3;
+      color:#176d63;
+    }
+
+    .badge.orange{
+      background:#fff0d8;
+      color:#805000;
+      animation:softBlink 1.6s ease-in-out infinite;
+    }
+
+    .mini-actions{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      margin-top:12px;
+    }
+
+    .mini-actions button,.mini-actions a{
+      font-size:.86rem;
+      padding:9px 10px;
+      border-radius:12px;
+      border:1px solid var(--line);
+      background:#fffaf5;
+      color:var(--primary-dark);
+      font-weight:850;
+      text-decoration:none;
+    }
+
+    .empty{
+      border:1px dashed #d7c7bd;
+      background:rgba(255,255,255,.72);
+      color:var(--muted);
+      border-radius:20px;
+      padding:24px;
+      text-align:center;
+      font-weight:700;
+    }
+
+    .table-wrap{
+      overflow:auto;
+      border-radius:18px;
+      border:1px solid var(--line);
+    }
+
+    table{
+      width:100%;
+      border-collapse:collapse;
+      background:#fff;
+      min-width:760px;
+    }
+
+    th,td{
+      text-align:left;
+      padding:12px 11px;
+      border-bottom:1px solid var(--line);
+      white-space:nowrap;
+      font-size:.92rem;
+    }
+
+    th{
+      background:#fff4e8;
+      color:#4e342e;
+      font-size:.82rem;
+      text-transform:uppercase;
+      letter-spacing:.04em;
+    }
+
+    .calc{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      margin-top:12px;
+    }
+
+    .calc span{
+      background:#fff4e8;
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:12px;
+      font-weight:800;
+      color:var(--muted);
+    }
+
+    .calc strong{color:var(--text)}
+
+    .hidden{display:none!important}
+
+    .toast{
+      position:fixed;
+      left:50%;
+      bottom:22px;
+      transform:translateX(-50%) translateY(20px);
+      background:#2d241f;
+      color:#fff;
+      padding:13px 16px;
+      border-radius:999px;
+      box-shadow:0 16px 32px rgba(0,0,0,.22);
+      opacity:0;
+      pointer-events:none;
+      transition:opacity .22s ease, transform .22s ease;
+      z-index:20;
+      font-weight:850;
+      max-width:92vw;
+      text-align:center;
+    }
+
+    .toast.show{
+      opacity:1;
+      transform:translateX(-50%) translateY(0);
+    }
+
+    .danger-zone{
+      background:#fff5f4;
+      border-color:#f3c4bf;
+    }
+
+    footer{
+      text-align:center;
+      color:var(--muted);
+      margin-top:20px;
+      font-weight:700;
+      font-size:.86rem;
+    }
+
+    @keyframes slideDown{
+      from{opacity:0;transform:translateY(-18px)}
+      to{opacity:1;transform:translateY(0)}
+    }
+
+    @keyframes fadeUp{
+      from{opacity:0;transform:translateY(10px)}
+      to{opacity:1;transform:translateY(0)}
+    }
+
+    @keyframes popIn{
+      from{opacity:0;transform:scale(.96) translateY(8px)}
+      to{opacity:1;transform:scale(1) translateY(0)}
+    }
+
+    @keyframes itemEnter{
+      from{opacity:0;transform:translateX(-8px)}
+      to{opacity:1;transform:translateX(0)}
+    }
+
+    @keyframes growBar{
+      from{transform:scaleX(.15);opacity:.4}
+      to{transform:scaleX(1);opacity:1}
+    }
+
+    @keyframes pulseLogo{
+      0%,100%{transform:scale(1)}
+      50%{transform:scale(1.06)}
+    }
+
+    @keyframes floatPaw{
+      0%,100%{transform:translateY(0) rotate(-18deg)}
+      50%{transform:translateY(10px) rotate(-12deg)}
+    }
+
+    @keyframes softBlink{
+      0%,100%{filter:brightness(1)}
+      50%{filter:brightness(1.08)}
+    }
+
+    @media(max-width:880px){
+      .metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .two-col{grid-template-columns:1fr}
+    }
+
+    @media(max-width:610px){
+      .app{padding:10px 10px 26px}
+      .hero{border-radius:26px;padding:20px 16px}
+      .hero-top{flex-direction:column}
+      .hero-actions{justify-content:flex-start}
+      .metrics{grid-template-columns:1fr}
+      .form{grid-template-columns:1fr}
+      .full{grid-column:auto}
+      .card{padding:15px}
+      button,a.button{padding:11px 12px}
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <header class="hero">
+      <div class="hero-top">
+        <div class="brand">
+          <div class="logo">🐱</div>
+          <div>
+            <h1 id="appTitle">Arena Control</h1>
+            <p class="subtitle">Clientes · Ventas · Stock · Recordatorios</p>
+          </div>
+        </div>
+        <div class="hero-actions">
+          <button class="btn-ghost" onclick="openImportPicker()">📂 Cargar datos</button>
+          <button class="btn-ghost" onclick="exportJSON()">💾 Respaldo</button>
+          <button class="btn-primary" onclick="goTo('ventas')">+ Venta</button>
+        </div>
+      </div>
+    </header>
+
+    <nav class="tabs">
+      <button class="tab active" data-tab="inicio"><span>🏠 Inicio</span></button>
+      <button class="tab" data-tab="clientes"><span>👥 Clientes</span></button>
+      <button class="tab" data-tab="ventas"><span>🧾 Ventas</span></button>
+      <button class="tab" data-tab="stock"><span>📦 Stock</span></button>
+      <button class="tab" data-tab="productos"><span>🐾 Productos</span></button>
+      <button class="tab" data-tab="ajustes"><span>⚙️ Ajustes</span></button>
+    </nav>
+
+    <main>
+      <section id="inicio" class="view active">
+        <div class="grid metrics">
+          <article class="metric">
+            <small>Ventas del mes</small>
+            <strong id="mVentas">$0</strong>
+            <div class="spark"></div>
+          </article>
+          <article class="metric">
+            <small>Utilidad estimada</small>
+            <strong id="mUtilidad">$0</strong>
+            <div class="spark"></div>
+          </article>
+          <article class="metric">
+            <small>Sacos vendidos</small>
+            <strong id="mSacos">0</strong>
+            <div class="spark"></div>
+          </article>
+          <article class="metric">
+            <small>Stock disponible</small>
+            <strong id="mStock">0</strong>
+            <div class="spark"></div>
+          </article>
+        </div>
+
+        <div class="grid two-col">
+          <section class="card">
+            <div class="card-title">
+              <div>
+                <h3>Clientes a contactar</h3>
+                <p class="hint">Aparecen cuando ya corresponde recompra según la última venta.</p>
+              </div>
+            </div>
+            <div id="contactList" class="list"></div>
+          </section>
+
+          <section class="card">
+            <h3>Punto de equilibrio simple</h3>
+            <p class="hint">Costos fijos mensuales divididos por utilidad promedio por saco.</p>
+            <div class="list">
+              <div class="item">
+                <p class="item-title">Costos fijos</p>
+                <p class="item-meta"><strong id="peCostos">$0</strong></p>
+              </div>
+              <div class="item">
+                <p class="item-title">Utilidad promedio/saco</p>
+                <p class="item-meta"><strong id="peMargen">$0</strong></p>
+              </div>
+              <div class="item">
+                <p class="item-title">Sacos para cubrir costos</p>
+                <p class="item-meta"><strong id="peSacos">0</strong></p>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <section class="card" style="margin-top:14px">
+          <h3>Últimas ventas</h3>
+          <p class="hint">Resumen rápido de los últimos movimientos comerciales.</p>
+          <div id="lastSales"></div>
+        </section>
+      </section>
+
+      <section id="clientes" class="view">
+        <section class="card">
+          <div class="card-title">
+            <h2>Clientes</h2>
+            <button class="btn-primary" onclick="showClientForm()">+ Nuevo</button>
+          </div>
+
+          <form id="clientForm" class="hidden" onsubmit="saveClient(event)">
+            <input type="hidden" id="clientId">
+            <div class="form">
+              <label>Nombre
+                <input id="clientName" required placeholder="Ej: Ana Pérez">
+              </label>
+              <label>WhatsApp
+                <input id="clientPhone" placeholder="Ej: 56912345678">
+              </label>
+              <label>Dirección
+                <input id="clientAddress" placeholder="Ej: Calle 123">
+              </label>
+              <label>Sector
+                <input id="clientSector" placeholder="Ej: Centro, Norte, Sur">
+              </label>
+              <label>Cantidad de gatos
+                <input id="clientCats" type="number" min="0" value="1">
+              </label>
+              <label>Frecuencia de recompra
+                <select id="clientFrequency">
+                  <option value="15">15 días</option>
+                  <option value="20" selected>20 días</option>
+                  <option value="25">25 días</option>
+                  <option value="30">30 días</option>
+                  <option value="45">45 días</option>
+                </select>
+              </label>
+              <label class="full">Observaciones
+                <textarea id="clientNotes" rows="2" placeholder="Horarios, preferencias, forma de pago..."></textarea>
+              </label>
+            </div>
+            <div class="actions">
+              <button class="btn-primary" type="submit">Guardar cliente</button>
+              <button class="btn-secondary" type="button" onclick="hideClientForm()">Cancelar</button>
+            </div>
+          </form>
+
+          <div style="margin:14px 0">
+            <input id="clientSearch" placeholder="Buscar cliente..." oninput="renderClients()">
+          </div>
+
+          <div id="clientList" class="list"></div>
+        </section>
+      </section>
+
+      <section id="ventas" class="view">
+        <section class="card">
+          <h2>Registrar venta</h2>
+          <p class="hint">Cada venta descuenta stock automáticamente y actualiza la fecha de recompra del cliente.</p>
+
+          <form onsubmit="saveSale(event)">
+            <div class="form">
+              <label>Fecha
+                <input id="saleDate" type="date" required>
+              </label>
+              <label>Cliente
+                <select id="saleClient" required></select>
+              </label>
+              <label>Producto
+                <select id="saleProduct" required onchange="fillProductPrice()"></select>
+              </label>
+              <label>Cantidad de sacos
+                <input id="saleQty" type="number" min="1" value="1" required oninput="updateCalc()">
+              </label>
+              <label>Precio unitario venta
+                <input id="salePrice" type="number" min="0" value="0" required oninput="updateCalc()">
+              </label>
+              <label>Costo unitario
+                <input id="saleCost" type="number" min="0" value="0" required oninput="updateCalc()">
+              </label>
+              <label>Medio de pago
+                <select id="salePayment">
+                  <option>Transferencia</option>
+                  <option>Efectivo</option>
+                  <option>Débito</option>
+                  <option>Crédito</option>
+                  <option>Otro</option>
+                </select>
+              </label>
+              <label>Despacho cobrado
+                <input id="saleDelivery" type="number" min="0" value="0" oninput="updateCalc()">
+              </label>
+              <label class="full">Observación
+                <textarea id="saleNotes" rows="2" placeholder="Ej: entregado, pendiente, promoción..."></textarea>
+              </label>
+            </div>
+
+            <div class="calc">
+              <span>Total: <strong id="calcTotal">$0</strong></span>
+              <span>Utilidad: <strong id="calcProfit">$0</strong></span>
+            </div>
+
+            <div class="actions">
+              <button class="btn-primary" type="submit">Guardar venta</button>
+              <button class="btn-secondary" type="button" onclick="clearSale()">Limpiar</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="card" style="margin-top:14px">
+          <h3>Historial de ventas</h3>
+          <div id="salesTable"></div>
+        </section>
+      </section>
+
+      <section id="stock" class="view">
+        <section class="card">
+          <h2>Control de stock</h2>
+          <p class="hint">Registra compras o ajustes de inventario.</p>
+
+          <form onsubmit="saveStock(event)">
+            <div class="form">
+              <label>Fecha
+                <input id="stockDate" type="date" required>
+              </label>
+              <label>Tipo
+                <select id="stockType">
+                  <option value="entrada">Entrada / compra</option>
+                  <option value="ajuste">Ajuste manual</option>
+                </select>
+              </label>
+              <label>Producto
+                <select id="stockProduct" required></select>
+              </label>
+              <label>Cantidad de sacos
+                <input id="stockQty" type="number" min="1" value="1" required>
+              </label>
+              <label>Costo unitario compra
+                <input id="stockCost" type="number" min="0" value="0">
+              </label>
+              <label class="full">Observación
+                <textarea id="stockNotes" rows="2"></textarea>
+              </label>
+            </div>
+            <div class="actions">
+              <button class="btn-primary" type="submit">Guardar movimiento</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="card" style="margin-top:14px">
+          <h3>Movimientos de stock</h3>
+          <div id="stockTable"></div>
+        </section>
+      </section>
+
+      <section id="productos" class="view">
+        <section class="card">
+          <div class="card-title">
+            <h2>Productos</h2>
+            <button class="btn-primary" onclick="showProductForm()">+ Nuevo</button>
+          </div>
+
+          <form id="productForm" class="hidden" onsubmit="saveProduct(event)">
+            <input type="hidden" id="productId">
+            <div class="form">
+              <label>Nombre producto
+                <input id="productName" required placeholder="Ej: Arena aglomerante 18 kg">
+              </label>
+              <label>Precio venta
+                <input id="productPrice" type="number" min="0" value="0" required>
+              </label>
+              <label>Costo unitario
+                <input id="productCost" type="number" min="0" value="0" required>
+              </label>
+              <label>Stock mínimo alerta
+                <input id="productMin" type="number" min="0" value="5">
+              </label>
+            </div>
+            <div class="actions">
+              <button class="btn-primary" type="submit">Guardar producto</button>
+              <button class="btn-secondary" type="button" onclick="hideProductForm()">Cancelar</button>
+            </div>
+          </form>
+
+          <div id="productList" class="list"></div>
+        </section>
+      </section>
+
+      <section id="ajustes" class="view">
+        <section class="card">
+          <h2>Ajustes</h2>
+          <form onsubmit="saveSettings(event)">
+            <div class="form">
+              <label>Nombre del negocio
+                <input id="businessName" placeholder="Ej: Arena Michi">
+              </label>
+              <label>Costos fijos mensuales
+                <input id="fixedCosts" type="number" min="0" value="0">
+              </label>
+              <label class="full">Mensaje base WhatsApp
+                <textarea id="whatsappMessage" rows="4"></textarea>
+              </label>
+            </div>
+            <div class="actions">
+              <button class="btn-primary" type="submit">Guardar ajustes</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="card" style="margin-top:14px">
+          <h3>Respaldos</h3>
+          <p class="hint">Usa JSON para respaldo completo. Usa CSV para abrir clientes o ventas en Excel.</p>
+          <div class="actions">
+            <button class="btn-secondary" onclick="exportJSON()">Exportar JSON</button>
+            <button class="btn-secondary" onclick="exportClientsCSV()">Exportar clientes CSV</button>
+            <button class="btn-secondary" onclick="exportSalesCSV()">Exportar ventas CSV</button>
+            <input type="file" id="importFile" accept=".json,application/json" class="hidden" onchange="importJSON(event)">
+            <button class="btn-secondary" onclick="openImportPicker()">Cargar respaldo JSON</button>
+          </div>
+        </section>
+
+        <section class="card danger-zone" style="margin-top:14px">
+          <h3>Zona de cuidado</h3>
+          <p class="hint">Borra todos los datos guardados localmente en este dispositivo.</p>
+          <button class="btn-danger" onclick="resetData()">Borrar todo</button>
+        </section>
+      </section>
+    </main>
+
+    <footer>
+      Arena Control v1.1 · HTML único · Datos guardados localmente
+    </footer>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    const KEY = "arenaControlSingleHTML_v11";
+    const $ = id => document.getElementById(id);
+
+    const defaultData = {
+      settings:{
+        businessName:"Arena Control",
+        fixedCosts:0,
+        whatsappMessage:"Hola {nombre}, ¿cómo estás? Te escribo porque ya han pasado cerca de {dias} días desde tu última compra de arena para gato. Aún mantenemos la oferta para clientes frecuentes. ¿Quieres que te reserve un saco para esta semana?"
+      },
+      clients:[],
+      products:[
+        {id:crypto.randomUUID(), name:"Arena para gato - saco estándar", price:0, cost:0, min:5}
+      ],
+      sales:[],
+      stock:[]
+    };
+
+    let data = load();
+
+    function load(){
+      try{
+        const raw = localStorage.getItem(KEY);
+        if(!raw){
+          localStorage.setItem(KEY, JSON.stringify(defaultData));
+          return structuredClone(defaultData);
+        }
+        const parsed = JSON.parse(raw);
+        return {
+          ...structuredClone(defaultData),
+          ...parsed,
+          settings:{...defaultData.settings, ...(parsed.settings || {})},
+          clients:parsed.clients || [],
+          products:parsed.products?.length ? parsed.products : structuredClone(defaultData.products),
+          sales:parsed.sales || [],
+          stock:parsed.stock || []
+        };
+      }catch(e){
+        return structuredClone(defaultData);
+      }
+    }
+
+    function save(){
+      localStorage.setItem(KEY, JSON.stringify(data));
+      render();
+    }
+
+    function toast(msg){
+      const t = $("toast");
+      t.textContent = msg;
+      t.classList.add("show");
+      setTimeout(()=>t.classList.remove("show"), 2200);
+    }
+
+    function money(n){
+      return new Intl.NumberFormat("es-CL",{
+        style:"currency",
+        currency:"CLP",
+        maximumFractionDigits:0
+      }).format(Number(n || 0));
+    }
+
+    function num(v){return Number(v || 0)}
+    function today(){return new Date().toISOString().slice(0,10)}
+    function esc(s){return String(s ?? "").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
+    function fmt(d){if(!d)return "Sin fecha"; const [y,m,day]=d.split("-"); return `${day}-${m}-${y}`}
+    function addDays(date, days){const d=new Date(date+"T00:00:00"); d.setDate(d.getDate()+num(days)); return d.toISOString().slice(0,10)}
+    function diffDays(a,b){return Math.floor((new Date(b+"T00:00:00")-new Date(a+"T00:00:00"))/(86400000))}
+    function client(id){return data.clients.find(x=>x.id===id)}
+    function product(id){return data.products.find(x=>x.id===id)}
+    function cleanPhone(p){return String(p || "").replace(/\D/g,"")}
+
+    function goTo(id){
+      document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("active", t.dataset.tab===id));
+      document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active", v.id===id));
+    }
+
+    document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>goTo(t.dataset.tab)));
+
+    function render(){
+      $("appTitle").textContent = data.settings.businessName || "Arena Control";
+      renderSelects();
+      renderDashboard();
+      renderClients();
+      renderProducts();
+      renderSales();
+      renderStock();
+      renderSettings();
+      updateCalc();
+    }
+
+    function renderSelects(){
+      const clients = data.clients.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join("");
+      const products = data.products.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join("");
+      $("saleClient").innerHTML = clients || `<option value="">Registra un cliente primero</option>`;
+      $("saleProduct").innerHTML = products || `<option value="">Registra un producto primero</option>`;
+      $("stockProduct").innerHTML = products || `<option value="">Registra un producto primero</option>`;
+      fillProductPrice(false);
+    }
+
+    function stockOf(productId){
+      const entrada = data.stock.filter(s=>s.productId===productId).reduce((a,s)=>a+num(s.qty),0);
+      const salida = data.sales.filter(s=>s.productId===productId).reduce((a,s)=>a+num(s.qty),0);
+      return entrada - salida;
+    }
+
+    function lastSale(clientId){
+      return [...data.sales].filter(s=>s.clientId===clientId).sort((a,b)=>b.date.localeCompare(a.date))[0];
+    }
+
+    function averageMargin(){
+      const qty = data.sales.reduce((a,s)=>a+num(s.qty),0);
+      const profit = data.sales.reduce((a,s)=>a+num(s.profit),0);
+      if(qty>0) return profit / qty;
+      const margins = data.products.map(p=>num(p.price)-num(p.cost)).filter(x=>x>0);
+      return margins.length ? margins.reduce((a,b)=>a+b,0)/margins.length : 0;
+    }
+
+    function renderDashboard(){
+      const now = new Date();
+      const month = now.getMonth();
+      const year = now.getFullYear();
+      const salesMonth = data.sales.filter(s=>{
+        const d = new Date(s.date+"T00:00:00");
+        return d.getMonth()===month && d.getFullYear()===year;
+      });
+
+      $("mVentas").textContent = money(salesMonth.reduce((a,s)=>a+num(s.total),0));
+      $("mUtilidad").textContent = money(salesMonth.reduce((a,s)=>a+num(s.profit),0));
+      $("mSacos").textContent = salesMonth.reduce((a,s)=>a+num(s.qty),0);
+      $("mStock").textContent = data.products.reduce((a,p)=>a+stockOf(p.id),0);
+
+      const margin = averageMargin();
+      const fixed = num(data.settings.fixedCosts);
+      $("peCostos").textContent = money(fixed);
+      $("peMargen").textContent = money(margin);
+      $("peSacos").textContent = margin>0 ? Math.ceil(fixed/margin) : "Sin margen";
+
+      const due = data.clients.map(c=>{
+        const l = lastSale(c.id);
+        if(!l) return {c,l:null,due:null,over:0};
+        const due = addDays(l.date, c.frequency || 20);
+        return {c,l,due,over:diffDays(due,today())};
+      }).filter(x=>!x.l || x.over>=0);
+
+      $("contactList").innerHTML = due.length ? due.map(x=>{
+        const msg = whatsappMsg(x.c, x.l);
+        const link = x.c.phone ? `https://wa.me/${cleanPhone(x.c.phone)}?text=${encodeURIComponent(msg)}` : "#";
+        return `<article class="item">
+          <div class="item-top">
+            <div>
+              <p class="item-title">${esc(x.c.name)}</p>
+              <p class="item-meta">${x.c.phone ? "WhatsApp: "+esc(x.c.phone) : "Sin teléfono"} · ${esc(x.c.sector || "Sin sector")}</p>
+            </div>
+            <span class="badge orange">⏰ Contactar</span>
+          </div>
+          <div class="badges">
+            <span class="badge">🐾 ${x.c.cats || 0} gato(s)</span>
+            <span class="badge">🔁 cada ${x.c.frequency || 20} días</span>
+            <span class="badge green">${x.l ? "Última: "+fmt(x.l.date) : "Sin venta"}</span>
+          </div>
+          <div class="mini-actions">
+            ${x.c.phone ? `<a href="${link}" target="_blank">Enviar WhatsApp</a>` : ""}
+            <button onclick="copyMessage('${encodeURIComponent(msg)}')">Copiar mensaje</button>
+          </div>
+        </article>`;
+      }).join("") : `<div class="empty">No hay clientes pendientes de contacto.</div>`;
+
+      const recent = [...data.sales].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,5);
+      $("lastSales").innerHTML = salesTable(recent, true);
+    }
+
+    function renderClients(){
+      const q = ($("clientSearch")?.value || "").toLowerCase();
+      const rows = data.clients.filter(c=>`${c.name} ${c.phone} ${c.address} ${c.sector}`.toLowerCase().includes(q));
+      $("clientList").innerHTML = rows.length ? rows.map(c=>{
+        const l = lastSale(c.id);
+        const due = l ? addDays(l.date,c.frequency || 20) : null;
+        return `<article class="item">
+          <div class="item-top">
+            <div>
+              <p class="item-title">${esc(c.name)}</p>
+              <p class="item-meta">${esc(c.address || "Sin dirección")} · ${esc(c.sector || "Sin sector")}</p>
+            </div>
+            <span class="badge green">${c.cats || 0} gato(s)</span>
+          </div>
+          <div class="badges">
+            <span class="badge">☎️ ${esc(c.phone || "Sin WhatsApp")}</span>
+            <span class="badge">🔁 ${c.frequency || 20} días</span>
+            ${due ? `<span class="badge">📅 Recompra: ${fmt(due)}</span>` : `<span class="badge orange">Sin ventas</span>`}
+          </div>
+          ${c.notes ? `<p class="item-meta">${esc(c.notes)}</p>` : ""}
+          <div class="mini-actions">
+            <button onclick="editClient('${c.id}')">Editar</button>
+            <button onclick="deleteClient('${c.id}')">Eliminar</button>
+          </div>
+        </article>`;
+      }).join("") : `<div class="empty">No hay clientes registrados.</div>`;
+    }
+
+    function showClientForm(){
+      $("clientForm").reset();
+      $("clientId").value="";
+      $("clientCats").value=1;
+      $("clientFrequency").value=20;
+      $("clientForm").classList.remove("hidden");
+    }
+
+    function hideClientForm(){$("clientForm").classList.add("hidden")}
+
+    function saveClient(e){
+      e.preventDefault();
+      const id = $("clientId").value || crypto.randomUUID();
+      const obj = {
+        id,
+        name:$("clientName").value.trim(),
+        phone:$("clientPhone").value.trim(),
+        address:$("clientAddress").value.trim(),
+        sector:$("clientSector").value.trim(),
+        cats:num($("clientCats").value),
+        frequency:num($("clientFrequency").value),
+        notes:$("clientNotes").value.trim()
+      };
+      const i = data.clients.findIndex(c=>c.id===id);
+      if(i>=0) data.clients[i]=obj; else data.clients.push(obj);
+      hideClientForm();
+      save();
+      toast("Cliente guardado");
+    }
+
+    function editClient(id){
+      const c=client(id); if(!c)return;
+      $("clientId").value=c.id;
+      $("clientName").value=c.name || "";
+      $("clientPhone").value=c.phone || "";
+      $("clientAddress").value=c.address || "";
+      $("clientSector").value=c.sector || "";
+      $("clientCats").value=c.cats || 0;
+      $("clientFrequency").value=c.frequency || 20;
+      $("clientNotes").value=c.notes || "";
+      $("clientForm").classList.remove("hidden");
+      goTo("clientes");
+    }
+
+    function deleteClient(id){
+      if(confirm("¿Eliminar este cliente?")){
+        data.clients=data.clients.filter(c=>c.id!==id);
+        save();
+        toast("Cliente eliminado");
+      }
+    }
+
+    function renderProducts(){
+      $("productList").innerHTML = data.products.length ? data.products.map(p=>{
+        const st = stockOf(p.id);
+        const low = st <= num(p.min);
+        return `<article class="item">
+          <div class="item-top">
+            <div>
+              <p class="item-title">${esc(p.name)}</p>
+              <p class="item-meta">Precio ${money(p.price)} · Costo ${money(p.cost)} · Margen ${money(num(p.price)-num(p.cost))}</p>
+            </div>
+            <span class="badge ${low ? "orange" : "green"}">📦 Stock ${st}</span>
+          </div>
+          <div class="badges">
+            <span class="badge">Alerta mínima: ${p.min || 0}</span>
+          </div>
+          <div class="mini-actions">
+            <button onclick="editProduct('${p.id}')">Editar</button>
+            <button onclick="deleteProduct('${p.id}')">Eliminar</button>
+          </div>
+        </article>`;
+      }).join("") : `<div class="empty">No hay productos registrados.</div>`;
+    }
+
+    function showProductForm(){
+      $("productForm").reset();
+      $("productId").value="";
+      $("productMin").value=5;
+      $("productForm").classList.remove("hidden");
+    }
+
+    function hideProductForm(){$("productForm").classList.add("hidden")}
+
+    function saveProduct(e){
+      e.preventDefault();
+      const id = $("productId").value || crypto.randomUUID();
+      const obj = {
+        id,
+        name:$("productName").value.trim(),
+        price:num($("productPrice").value),
+        cost:num($("productCost").value),
+        min:num($("productMin").value)
+      };
+      const i = data.products.findIndex(p=>p.id===id);
+      if(i>=0) data.products[i]=obj; else data.products.push(obj);
+      hideProductForm();
+      save();
+      toast("Producto guardado");
+    }
+
+    function editProduct(id){
+      const p=product(id); if(!p)return;
+      $("productId").value=p.id;
+      $("productName").value=p.name || "";
+      $("productPrice").value=p.price || 0;
+      $("productCost").value=p.cost || 0;
+      $("productMin").value=p.min || 0;
+      $("productForm").classList.remove("hidden");
+      goTo("productos");
+    }
+
+    function deleteProduct(id){
+      if(data.sales.some(s=>s.productId===id) || data.stock.some(s=>s.productId===id)){
+        alert("Este producto tiene ventas o stock asociado. Mejor edita el nombre.");
+        return;
+      }
+      if(confirm("¿Eliminar producto?")){
+        data.products=data.products.filter(p=>p.id!==id);
+        save();
+        toast("Producto eliminado");
+      }
+    }
+
+    function fillProductPrice(shouldCalc=true){
+      const p = product($("saleProduct")?.value);
+      if(p){
+        $("salePrice").value = p.price || 0;
+        $("saleCost").value = p.cost || 0;
+      }
+      if(shouldCalc) updateCalc();
+    }
+
+    function updateCalc(){
+      if(!$("saleQty")) return;
+      const qty=num($("saleQty").value), price=num($("salePrice").value), cost=num($("saleCost").value), del=num($("saleDelivery").value);
+      $("calcTotal").textContent = money(qty*price + del);
+      $("calcProfit").textContent = money(qty*(price-cost) + del);
+    }
+
+    function saveSale(e){
+      e.preventDefault();
+      if(!data.clients.length) return alert("Primero registra un cliente.");
+      if(!data.products.length) return alert("Primero registra un producto.");
+      const qty=num($("saleQty").value), price=num($("salePrice").value), cost=num($("saleCost").value), del=num($("saleDelivery").value);
+      const obj = {
+        id:crypto.randomUUID(),
+        date:$("saleDate").value,
+        clientId:$("saleClient").value,
+        productId:$("saleProduct").value,
+        qty, price, cost,
+        delivery:del,
+        total:qty*price+del,
+        profit:qty*(price-cost)+del,
+        payment:$("salePayment").value,
+        notes:$("saleNotes").value.trim()
+      };
+      const available = stockOf(obj.productId);
+      if(available < qty && !confirm(`Stock disponible: ${available}. La venta dejará stock negativo. ¿Guardar igual?`)) return;
+      data.sales.push(obj);
+      clearSale();
+      save();
+      toast("Venta registrada");
+    }
+
+    function clearSale(){
+      $("saleDate").value=today();
+      $("saleQty").value=1;
+      $("saleDelivery").value=0;
+      $("saleNotes").value="";
+      fillProductPrice();
+    }
+
+    function salesTable(rows, compact=false){
+      if(!rows.length) return `<div class="empty">No hay ventas registradas.</div>`;
+      return `<div class="table-wrap"><table>
+        <thead><tr>
+          <th>Fecha</th><th>Cliente</th><th>Producto</th><th>Cant.</th><th>Total</th><th>Utilidad</th>${compact ? "" : "<th>Acción</th>"}
+        </tr></thead>
+        <tbody>${rows.map(s=>`
+          <tr>
+            <td>${fmt(s.date)}</td>
+            <td>${esc(client(s.clientId)?.name || "Cliente eliminado")}</td>
+            <td>${esc(product(s.productId)?.name || "Producto eliminado")}</td>
+            <td>${s.qty}</td>
+            <td>${money(s.total)}</td>
+            <td>${money(s.profit)}</td>
+            ${compact ? "" : `<td><button class="btn-secondary" onclick="deleteSale('${s.id}')">Eliminar</button></td>`}
+          </tr>`).join("")}</tbody>
+      </table></div>`;
+    }
+
+    function renderSales(){
+      $("salesTable").innerHTML = salesTable([...data.sales].sort((a,b)=>b.date.localeCompare(a.date)));
+    }
+
+    function deleteSale(id){
+      if(confirm("¿Eliminar esta venta?")){
+        data.sales=data.sales.filter(s=>s.id!==id);
+        save();
+        toast("Venta eliminada");
+      }
+    }
+
+    function saveStock(e){
+      e.preventDefault();
+      const obj = {
+        id:crypto.randomUUID(),
+        date:$("stockDate").value,
+        type:$("stockType").value,
+        productId:$("stockProduct").value,
+        qty:num($("stockQty").value),
+        cost:num($("stockCost").value),
+        notes:$("stockNotes").value.trim()
+      };
+      data.stock.push(obj);
+      const p=product(obj.productId);
+      if(p && obj.cost>0) p.cost=obj.cost;
+      $("stockDate").value=today();
+      $("stockQty").value=1;
+      $("stockCost").value=0;
+      $("stockNotes").value="";
+      save();
+      toast("Stock actualizado");
+    }
+
+    function renderStock(){
+      const rows=[...data.stock].sort((a,b)=>b.date.localeCompare(a.date));
+      $("stockTable").innerHTML = rows.length ? `<div class="table-wrap"><table>
+        <thead><tr><th>Fecha</th><th>Tipo</th><th>Producto</th><th>Cantidad</th><th>Costo</th><th>Acción</th></tr></thead>
+        <tbody>${rows.map(s=>`
+          <tr>
+            <td>${fmt(s.date)}</td>
+            <td>${s.type==="entrada" ? "Entrada" : "Ajuste"}</td>
+            <td>${esc(product(s.productId)?.name || "Producto eliminado")}</td>
+            <td>${s.qty}</td>
+            <td>${money(s.cost)}</td>
+            <td><button class="btn-secondary" onclick="deleteStock('${s.id}')">Eliminar</button></td>
+          </tr>`).join("")}</tbody>
+      </table></div>` : `<div class="empty">No hay movimientos de stock.</div>`;
+    }
+
+    function deleteStock(id){
+      if(confirm("¿Eliminar movimiento de stock?")){
+        data.stock=data.stock.filter(s=>s.id!==id);
+        save();
+        toast("Movimiento eliminado");
+      }
+    }
+
+    function renderSettings(){
+      $("businessName").value = data.settings.businessName || "";
+      $("fixedCosts").value = data.settings.fixedCosts || 0;
+      $("whatsappMessage").value = data.settings.whatsappMessage || "";
+    }
+
+    function saveSettings(e){
+      e.preventDefault();
+      data.settings.businessName = $("businessName").value.trim() || "Arena Control";
+      data.settings.fixedCosts = num($("fixedCosts").value);
+      data.settings.whatsappMessage = $("whatsappMessage").value.trim();
+      save();
+      toast("Ajustes guardados");
+    }
+
+    function whatsappMsg(c,l){
+      const dias = l ? diffDays(l.date,today()) : (c.frequency || 20);
+      return (data.settings.whatsappMessage || "")
+        .replaceAll("{nombre}", c.name || "")
+        .replaceAll("{dias}", dias)
+        .replaceAll("{frecuencia}", c.frequency || 20);
+    }
+
+    function copyMessage(encoded){
+      const txt=decodeURIComponent(encoded);
+      navigator.clipboard?.writeText(txt).then(()=>toast("Mensaje copiado"),()=>prompt("Copia el mensaje:",txt));
+    }
+
+    function download(name, content, type){
+      const blob=new Blob([content],{type});
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement("a");
+      a.href=url; a.download=name; document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function exportJSON(){
+      download(`arena-control-respaldo-${today()}.json`, JSON.stringify(data,null,2), "application/json");
+      toast("Respaldo JSON generado");
+    }
+
+    function csv(rows){
+      return rows.map(r=>r.map(x=>`"${String(x ?? "").replaceAll('"','""')}"`).join(";")).join("\n");
+    }
+
+    function exportClientsCSV(){
+      const rows=[["Nombre","WhatsApp","Dirección","Sector","Gatos","Frecuencia","Notas"]];
+      data.clients.forEach(c=>rows.push([c.name,c.phone,c.address,c.sector,c.cats,c.frequency,c.notes]));
+      download(`clientes-${today()}.csv`, csv(rows), "text/csv;charset=utf-8");
+      toast("Clientes CSV generado");
+    }
+
+    function exportSalesCSV(){
+      const rows=[["Fecha","Cliente","Producto","Cantidad","Precio","Costo","Despacho","Total","Utilidad","Pago","Notas"]];
+      data.sales.forEach(s=>rows.push([s.date,client(s.clientId)?.name || "",product(s.productId)?.name || "",s.qty,s.price,s.cost,s.delivery,s.total,s.profit,s.payment,s.notes]));
+      download(`ventas-${today()}.csv`, csv(rows), "text/csv;charset=utf-8");
+      toast("Ventas CSV generado");
+    }
+
+    function openImportPicker(){
+      $("importFile").click();
+    }
+
+    function normalizeImportedData(imported){
+      if(!imported || typeof imported !== "object") throw new Error("El archivo no contiene datos válidos");
+      if(!Array.isArray(imported.clients)) throw new Error("Falta la lista de clientes");
+      if(!Array.isArray(imported.products)) throw new Error("Falta la lista de productos");
+      if(!Array.isArray(imported.sales)) throw new Error("Falta la lista de ventas");
+      if(imported.stock != null && !Array.isArray(imported.stock)) throw new Error("El stock tiene un formato inválido");
+
+      return {
+        ...structuredClone(defaultData),
+        ...imported,
+        settings:{...defaultData.settings, ...(imported.settings || {})},
+        clients:imported.clients,
+        products:imported.products,
+        sales:imported.sales,
+        stock:imported.stock || []
+      };
+    }
+
+    function importJSON(e){
+      const file=e.target.files[0];
+      if(!file)return;
+      const reader=new FileReader();
+      reader.onload=()=>{
+        try{
+          const imported=normalizeImportedData(JSON.parse(reader.result));
+          const resumen = [
+            `Archivo: ${file.name}`,
+            `Clientes: ${imported.clients.length}`,
+            `Productos: ${imported.products.length}`,
+            `Ventas: ${imported.sales.length}`,
+            `Movimientos de stock: ${imported.stock.length}`,
+            "",
+            "Esto reemplazará los datos actuales guardados en este navegador. ¿Continuar?"
+          ].join("\n");
+          if(confirm(resumen)){
+            data=imported;
+            save();
+            goTo("inicio");
+            toast(`Datos cargados: ${data.clients.length} clientes y ${data.sales.length} ventas`);
+          }
+        }catch(err){
+          alert(`No se pudo cargar el respaldo.\n\n${err.message}`);
+        }
+      };
+      reader.onerror=()=>alert("No se pudo leer el archivo seleccionado.");
+      reader.readAsText(file);
+      e.target.value="";
+    }
+
+    function resetData(){
+      if(confirm("¿Seguro que quieres borrar todos los datos?")){
+        localStorage.removeItem(KEY);
+        data=structuredClone(defaultData);
+        save();
+        toast("Datos borrados");
+      }
+    }
+
+    $("saleDate").value=today();
+    $("stockDate").value=today();
+    render();
+  </script>
+</body>
+</html>
