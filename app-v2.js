@@ -57,22 +57,47 @@ const lotAvailable = l => num(l.qty)+lotAdjustment(l.id)-data.sales.reduce((n,s)
 const pendingFor = id => data.sales.filter(s=>s.productId===id).reduce((n,s)=>n+num(s.pendingQty),0);
 const availableFor = id => data.lots.filter(l=>l.productId===id).reduce((n,l)=>n+num(l.qty)+lotAdjustment(l.id),0)-data.sales.filter(s=>s.productId===id).reduce((n,s)=>n+num(s.qty),0);
 function recompute(){
-  // Reconstrucción determinista por producto y antigüedad de venta/lote.
-  // Unidades sin lote quedan pendientes hasta un futuro ingreso.
-  const remaining=new Map(data.lots.map(l=>[l.id,Math.max(0,num(l.qty)+lotAdjustment(l.id))]));
+  // Libro cronológico: entradas, ventas y ajustes por fecha. Las unidades
+  // comprometidas antes de una compra esperan el siguiente lote del producto.
+  const remaining=new Map(data.lots.map(l=>[l.id,0]));
+  const waiting=new Map();
   for(const s of data.sales){s.allocations=[];s.pendingQty=0;}
-  for(const s of sortedSales()){
-    let need=num(s.qty);
+  const events=[
+    ...data.lots.map(l=>({date:l.date||today(),priority:0,order:l.createdAt||"",type:"lot",value:l})),
+    ...data.sales.map(s=>({date:s.date||today(),priority:1,order:s.createdAt||"",type:"sale",value:s})),
+    ...data.adjustments.map(a=>({date:a.date||today(),priority:2,order:a.createdAt||"",type:"adjust",value:a}))
+  ].sort((a,b)=>a.date.localeCompare(b.date)||a.priority-b.priority||a.order.localeCompare(b.order)||a.value.id.localeCompare(b.value.id));
+  function assign(s,l,qty){
+    const take=Math.min(qty,remaining.get(l.id)||0);
+    if(take<=0)return 0;
+    s.allocations.push({lotId:l.id,qty:take,unitCost:num(l.totalCost)/Math.max(1,num(l.qty))});
+    remaining.set(l.id,(remaining.get(l.id)||0)-take);
+    s.pendingQty-=take;
+    return take;
+  }
+  function allocateAvailable(s){
     for(const l of sortedLots()){
-      if(l.productId!==s.productId || need<=0) continue;
-      const left=remaining.get(l.id)||0;
-      if(left<=0) continue;
-      const take=Math.min(need,left);
-      s.allocations.push({lotId:l.id,qty:take,unitCost:num(l.totalCost)/Math.max(1,num(l.qty))});
-      remaining.set(l.id,left-take);
-      need-=take;
+      if(l.productId===s.productId && s.pendingQty>0)assign(s,l,s.pendingQty);
     }
-    s.pendingQty=need;
+  }
+  function settleWaiting(productId){
+    for(const s of waiting.get(productId)||[])allocateAvailable(s);
+    waiting.set(productId,(waiting.get(productId)||[]).filter(s=>s.pendingQty>0));
+  }
+  for(const ev of events){
+    if(ev.type==="lot"){
+      const l=ev.value;
+      remaining.set(l.id,(remaining.get(l.id)||0)+num(l.qty));
+      settleWaiting(l.productId);
+    }else if(ev.type==="sale"){
+      const s=ev.value;s.pendingQty=num(s.qty);
+      allocateAvailable(s);
+      if(s.pendingQty>0)waiting.set(s.productId,[...(waiting.get(s.productId)||[]),s]);
+    }else{
+      const a=ev.value,l=lot(a.lotId);if(!l)continue;
+      remaining.set(l.id,Math.max(0,(remaining.get(l.id)||0)+num(a.qty)));
+      if(num(a.qty)>0)settleWaiting(l.productId);
+    }
   }
 }
 function save(){
