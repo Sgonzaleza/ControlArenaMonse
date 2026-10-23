@@ -604,7 +604,8 @@
       <button class="tab active" data-tab="inicio"><span>🏠 Inicio</span></button>
       <button class="tab" data-tab="clientes"><span>👥 Clientes</span></button>
       <button class="tab" data-tab="ventas"><span>🧾 Ventas</span></button>
-      <button class="tab" data-tab="stock"><span>📦 Stock</span></button>
+      <button class="tab" data-tab="stock"><span>📦 Pedidos</span></button>
+      <button class="tab" data-tab="historial"><span>📊 Historial</span></button>
       <button class="tab" data-tab="productos"><span>🐾 Productos</span></button>
       <button class="tab" data-tab="ajustes"><span>⚙️ Ajustes</span></button>
     </nav>
@@ -613,12 +614,12 @@
       <section id="inicio" class="view active">
         <div class="grid metrics">
           <article class="metric">
-            <small>Ventas del mes</small>
+            <small>Ventas de arena del lote</small>
             <strong id="mVentas">$0</strong>
             <div class="spark"></div>
           </article>
           <article class="metric">
-            <small>Utilidad estimada</small>
+            <small>Utilidad bruta del lote</small>
             <strong id="mUtilidad">$0</strong>
             <div class="spark"></div>
           </article>
@@ -628,12 +629,21 @@
             <div class="spark"></div>
           </article>
           <article class="metric">
-            <small>Stock disponible</small>
+            <small>Stock del lote</small>
             <strong id="mStock">0</strong>
             <div class="spark"></div>
           </article>
         </div>
 
+        <section class="card" style="margin-top:14px">
+          <div class="form">
+            <label>Pedido seleccionado
+              <select id="dashboardLot" onchange="selectDashboardLot(this.value)"></select>
+            </label>
+            <div><p class="hint" id="dashboardLotStatus">Selecciona un pedido para revisar sus resultados.</p></div>
+          </div>
+          <div class="calc" id="dashboardCash"></div>
+        </section>
         <div class="grid two-col">
           <section class="card">
             <div class="card-title">
@@ -646,19 +656,19 @@
           </section>
 
           <section class="card">
-            <h3>Punto de equilibrio simple</h3>
-            <p class="hint">Costos fijos mensuales divididos por utilidad promedio por saco.</p>
+            <h3>Resumen de inventario</h3>
+            <p class="hint">Inventario real de todos los productos y unidades por asignar.</p>
             <div class="list">
               <div class="item">
-                <p class="item-title">Costos fijos</p>
+                <p class="item-title">Sacos disponibles</p>
                 <p class="item-meta"><strong id="peCostos">$0</strong></p>
               </div>
               <div class="item">
-                <p class="item-title">Utilidad promedio/saco</p>
+                <p class="item-title">Unidades pendientes de lote</p>
                 <p class="item-meta"><strong id="peMargen">$0</strong></p>
               </div>
               <div class="item">
-                <p class="item-title">Sacos para cubrir costos</p>
+                <p class="item-title">Cobros pendientes</p>
                 <p class="item-meta"><strong id="peSacos">0</strong></p>
               </div>
             </div>
@@ -727,15 +737,25 @@
       <section id="ventas" class="view">
         <section class="card">
           <h2>Registrar venta</h2>
-          <p class="hint">Cada venta descuenta stock automáticamente y actualiza la fecha de recompra del cliente.</p>
+          <p class="hint">Puedes vender sin registrar previamente al comprador. El stock se asigna a los lotes más antiguos del producto.</p>
 
-          <form onsubmit="saveSale(event)">
+          <form id="saleForm" onsubmit="saveSale(event)">
+            <input type="hidden" id="saleId">
             <div class="form">
               <label>Fecha
                 <input id="saleDate" type="date" required>
               </label>
-              <label>Cliente
-                <select id="saleClient" required></select>
+              <label>Tipo de comprador
+                <select id="saleBuyerType" onchange="toggleBuyer()">
+                  <option value="quick">Venta rápida (nombre)</option>
+                  <option value="client">Cliente registrado</option>
+                </select>
+              </label>
+              <label id="saleBuyerNameWrap">Nombre del comprador
+                <input id="saleBuyerName" placeholder="Ej: María González" required>
+              </label>
+              <label id="saleBuyerClientWrap" class="hidden">Cliente registrado
+                <select id="saleClient"></select>
               </label>
               <label>Producto
                 <select id="saleProduct" required onchange="fillProductPrice()"></select>
@@ -745,9 +765,6 @@
               </label>
               <label>Precio unitario venta
                 <input id="salePrice" type="number" min="0" value="0" required oninput="updateCalc()">
-              </label>
-              <label>Costo unitario
-                <input id="saleCost" type="number" min="0" value="0" required oninput="updateCalc()">
               </label>
               <label>Medio de pago
                 <select id="salePayment">
@@ -761,6 +778,9 @@
               <label>Despacho cobrado
                 <input id="saleDelivery" type="number" min="0" value="0" oninput="updateCalc()">
               </label>
+              <label>Pago inicial o abono
+                <input id="saleInitialPayment" type="number" min="0" value="0" oninput="updateCalc()">
+              </label>
               <label class="full">Observación
                 <textarea id="saleNotes" rows="2" placeholder="Ej: entregado, pendiente, promoción..."></textarea>
               </label>
@@ -768,46 +788,42 @@
 
             <div class="calc">
               <span>Total: <strong id="calcTotal">$0</strong></span>
-              <span>Utilidad: <strong id="calcProfit">$0</strong></span>
+              <span>Utilidad de arena: <strong id="calcProfit">$0</strong></span>
+              <span>Saldo por cobrar: <strong id="calcBalance">$0</strong></span>
             </div>
 
             <div class="actions">
-              <button class="btn-primary" type="submit">Guardar venta</button>
-              <button class="btn-secondary" type="button" onclick="clearSale()">Limpiar</button>
+              <button class="btn-primary" id="saleSaveButton" type="submit">Guardar venta</button>
+              <button class="btn-secondary" type="button" onclick="clearSale()">Limpiar / cancelar edición</button>
             </div>
           </form>
         </section>
 
         <section class="card" style="margin-top:14px">
-          <h3>Historial de ventas</h3>
+          <h3>Ventas y cobranza</h3>
           <div id="salesTable"></div>
         </section>
       </section>
 
       <section id="stock" class="view">
         <section class="card">
-          <h2>Control de stock</h2>
-          <p class="hint">Registra compras o ajustes de inventario.</p>
+          <h2>Nuevo pedido / lote</h2>
+          <p class="hint">Cada ingreso crea un lote independiente por producto. Ingresa el costo total de compra.</p>
 
           <form onsubmit="saveStock(event)">
             <div class="form">
               <label>Fecha
                 <input id="stockDate" type="date" required>
               </label>
-              <label>Tipo
-                <select id="stockType">
-                  <option value="entrada">Entrada / compra</option>
-                  <option value="ajuste">Ajuste manual</option>
-                </select>
-              </label>
+              <input type="hidden" id="stockType" value="entrada">
               <label>Producto
                 <select id="stockProduct" required></select>
               </label>
               <label>Cantidad de sacos
                 <input id="stockQty" type="number" min="1" value="1" required>
               </label>
-              <label>Costo unitario compra
-                <input id="stockCost" type="number" min="0" value="0">
+              <label>Costo total del pedido
+                <input id="stockCost" type="number" min="0" value="0" required>
               </label>
               <label class="full">Observación
                 <textarea id="stockNotes" rows="2"></textarea>
@@ -820,8 +836,40 @@
         </section>
 
         <section class="card" style="margin-top:14px">
-          <h3>Movimientos de stock</h3>
+          <h3>Lotes y movimientos</h3>
           <div id="stockTable"></div>
+        </section>
+        <section class="card" style="margin-top:14px">
+          <h3>Registrar pérdida o ajuste</h3>
+          <p class="hint">Una pérdida descuenta existencias; una corrección puede sumar o restar sacos. Queda registrada con su motivo.</p>
+          <form onsubmit="saveAdjustment(event)">
+            <div class="form">
+              <label>Lote
+                <select id="adjustLot" required></select>
+              </label>
+              <label>Motivo
+                <select id="adjustType"><option value="loss">Pérdida o daño</option><option value="correction">Corrección de conteo</option></select>
+              </label>
+              <label>Variación de sacos
+                <input id="adjustQty" type="number" step="1" value="-1" required>
+              </label>
+              <label>Fecha
+                <input id="adjustDate" type="date" required>
+              </label>
+              <label class="full">Detalle
+                <input id="adjustNotes" placeholder="Motivo del ajuste">
+              </label>
+            </div>
+            <div class="actions"><button class="btn-secondary" type="submit">Guardar ajuste</button></div>
+          </form>
+        </section>
+      </section>
+
+      <section id="historial" class="view">
+        <section class="card">
+          <h2>Historial de pedidos y ganancias</h2>
+          <p class="hint">Cada lote mantiene sus resultados individuales, incluso después del cierre.</p>
+          <div id="lotHistory"></div>
         </section>
       </section>
 
@@ -841,8 +889,11 @@
               <label>Precio venta
                 <input id="productPrice" type="number" min="0" value="0" required>
               </label>
-              <label>Costo unitario
-                <input id="productCost" type="number" min="0" value="0" required>
+              <label>Marca
+                <input id="productBrand" placeholder="Ej: Marca A">
+              </label>
+              <label>Presentación / formato
+                <input id="productFormat" placeholder="Ej: saco de 15 kg">
               </label>
               <label>Stock mínimo alerta
                 <input id="productMin" type="number" min="0" value="5">
@@ -881,7 +932,7 @@
 
         <section class="card" style="margin-top:14px">
           <h3>Respaldos</h3>
-          <p class="hint">Usa JSON para respaldo completo. Usa CSV para abrir clientes o ventas en Excel.</p>
+          <p class="hint">Los datos siguen guardados en este navegador. Exporta JSON periódicamente. La versión anterior se conserva por separado.</p>
           <div class="actions">
             <button class="btn-secondary" onclick="exportJSON()">Exportar JSON</button>
             <button class="btn-secondary" onclick="exportClientsCSV()">Exportar clientes CSV</button>
@@ -893,20 +944,20 @@
 
         <section class="card danger-zone" style="margin-top:14px">
           <h3>Zona de cuidado</h3>
-          <p class="hint">Borra todos los datos guardados localmente en este dispositivo.</p>
+          <p class="hint">Borra los datos de esta nueva versión en este navegador, no los respaldos descargados ni los datos de la versión anterior.</p>
           <button class="btn-danger" onclick="resetData()">Borrar todo</button>
         </section>
       </section>
     </main>
 
     <footer>
-      Arena Control v1.1 · HTML único · Datos guardados localmente
+      Arena Control v2.0 · Datos locales · Respaldo JSON
     </footer>
   </div>
 
   <div id="toast" class="toast"></div>
 
-  <script>
+  <script type="text/plain" id="legacyV1">
     const KEY = "arenaControlSingleHTML_v11";
     const $ = id => document.getElementById(id);
 
@@ -1481,5 +1532,6 @@
     $("stockDate").value=today();
     render();
   </script>
+  <script src="app-v2.js"></script>
 </body>
 </html>
